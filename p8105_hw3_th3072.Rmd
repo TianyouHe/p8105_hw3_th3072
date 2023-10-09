@@ -1,0 +1,62 @@
+---
+title: "p8105_hw3_th3072"
+output: github_document
+---
+
+```{r}
+library(tidyverse)
+library(p8105.datasets)
+
+```
+
+# Problem 1
+
+## part 1
+```{r}
+data("instacart")
+# Number of aisles
+number_aisles <- nrow(instacart)
+
+# Aisles with most orders
+aisles_most_ordered <- instacart |>
+  group_by(aisle) |>
+  summarise(count = n()) |>
+  arrange(-count)
+```
+
+## part 2
+```{r}
+filtered_aisles <- aisles_most_ordered |>
+  filter(count > 10000)
+
+ggplot(filtered_aisles, aes(x = reorder(aisle, -count), y = count)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Number of Items Ordered by Aisle", x = "Aisle", y = "Number of Orders")
+```
+
+```{r}
+popular_items <- instacart |>
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) |>
+  group_by(aisle, product_name) |>
+  summarise(count = n(), .groups = 'drop') |>
+  arrange(aisle, -count) |>
+  group_by(aisle) |>
+  slice_head(n = 3)
+
+```
+
+```{r}
+mean_hour <- instacart |>
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) |>
+  group_by(product_name, order_dow) |>
+  summarise(mean_hour = mean(order_hour_of_day), .group = 'drop') |>
+  spread(key = product_name, value = mean_hour)
+```
+
+# Problem 2
+
+```{r}
+data("brfss_smart2010")
+```
+
