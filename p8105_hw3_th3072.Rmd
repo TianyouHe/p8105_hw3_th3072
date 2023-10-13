@@ -24,6 +24,10 @@ aisles_most_ordered <- instacart |>
   arrange(-count)
 ```
 
+*Answer*
+
+There are `r nrow(instacart)` aisles and fresh vegetables are the most items ordered from.
+
 ## part 2
 ```{r}
 filtered_aisles <- aisles_most_ordered |>
@@ -34,8 +38,9 @@ ggplot(filtered_aisles, aes(x = reorder(aisle, -count), y = count)) +
   coord_flip() +
   labs(title = "Number of Items Ordered by Aisle", x = "Aisle", y = "Number of Orders")
 ```
-
+## part 3
 ```{r}
+# Three most popular items in each of the aisle
 popular_items <- instacart |>
   filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) |>
   group_by(aisle, product_name) |>
@@ -47,6 +52,7 @@ popular_items <- instacart |>
 ```
 
 ```{r}
+# mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week
 mean_hour <- instacart |>
   filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) |>
   group_by(product_name, order_dow) |>
@@ -60,6 +66,7 @@ mean_hour <- instacart |>
 # Problem 2
 
 ```{r}
+# Clean the data
 data("brfss_smart2010")
 brfss_cleaned <- brfss_smart2010 |>
   select(Year, Locationabbr, Locationdesc, Topic, Response, Data_value) |>
@@ -71,10 +78,26 @@ brfss_cleaned <- brfss_smart2010 |>
 
 ```
 
+## part 1
 ```{r}
-excellent_data <- brfss_cleaned %>%
-  filter(Response == "Excellent") %>%
-  group_by(Year, Locationabbr) %>%
+# state were observed at 7 or more location (2002 and 2010)
+seven_or_more_observed <- brfss_cleaned |>
+  group_by(Year, Locationabbr)|>
+  summarize(location = n_distinct(Locationdesc))|>
+  filter(location >=7 & (Year == 2002 | Year == 2010))
+```
+
+*Answer*
+
+In 2002, CT, FL, MA, NC, NJ and PA were observed at 7 or more locations.
+
+In 2010, CA, CO, FL, MA, MD, NC, NE, NJ, NY, OH, PA, SC, TX and WA were observed at 7 or more locations.
+
+## part 2
+```{r}
+excellent_data <- brfss_cleaned |>
+  filter(Response == "Excellent") |>
+  group_by(Year, Locationabbr) |>
   summarize(mean_data_value = mean(Data_value, na.rm = TRUE))
 
 ggplot(excellent_data, aes(x = Year, y = mean_data_value, group = Locationabbr, color = Locationabbr)) +
@@ -84,6 +107,7 @@ ggplot(excellent_data, aes(x = Year, y = mean_data_value, group = Locationabbr, 
        y = "Average Data Value")
 
 ```
+## part 3
 ```{r}
 ny_data <- brfss_cleaned |>
   filter(Locationabbr == "NY" & (Year == 2006 | Year == 2010))
@@ -98,44 +122,52 @@ ggplot(ny_data, aes(x = Response, y = Data_value)) +
 ```
 
 
+
 # Problem 3
 ```{r}
 demo_data <- read.csv("./hw3_data/nhanes_covar.csv", skip = 4)
 accel_data <- read.csv("./hw3_data/nhanes_accel.csv")
 
-# Merge the two datasets based on a common identifier, e.g., participant_id
-merged_data <- merge(demo_data, accel_data, by = "SEQN")
+# Merge the two datasets 
+demo_accel_data <- merge(demo_data, accel_data, by = "SEQN")
 
 ```
 
 ```{r}
-merged_data$sex <- ifelse(merged_data$sex ==1, "male", "female")
-merged_data$education <- ifelse(merged_data$education ==1, "Less than high school",
-                            ifelse(merged_data$education == 2, "High school equivalent", "More than high school"))
-cleaned_data <- merged_data |>
+demo_accel_data$sex <- ifelse(demo_accel_data$sex ==1, "male", "female")
+demo_accel_data$education <- ifelse(demo_accel_data$education ==1, "Less than high school",
+                            ifelse(demo_accel_data$education == 2, "High school equivalent", "More than high school"))
+cleaned_data <- demo_accel_data |>
   filter(age >= 21, !is.na(sex), !is.na(education), !is.na(BMI), !is.na(age)) |>
   mutate(sex = factor(sex, levels = c("male", "female")),
          education = factor(education, levels = c("Less than high school", "High school equivalent", "More than high school")))
 ```
 
 ```{r}
-education_gender_table <- cleaned_data %>%
-  group_by(education, sex) %>%
+education_gender <- cleaned_data |>
+  group_by(education, sex) |>
   summarize(count = n())
 
 ```
 
+## part 1
 ```{r}
-cleaned_data %>%
+# number of men and women in each education category and create a visulization of the age distributions for men and women in each education category
+cleaned_data |>
   ggplot(aes(x = age, color = sex)) +
   geom_histogram(binwidth = 5) +
   facet_grid(~ education) +
-  labs(title = "Age distributions by gender and education level",
+  labs(title = "Age distributions by sex and education level",
        x = "Age",
        y = "Count") +
   theme_minimal()
 
 ```
+*Answer*
+
+In this table, we can clearly see that in this dataset, the number of people who is `more than high school` is more than `High school equivalent` and `Less than high school`. Moreover, regardless of age, there are more male than females in this dataset.
+
+## part 2
 ```{r}
 # Aggregate activity data
 activity_summary <- cleaned_data|>
@@ -147,7 +179,6 @@ activity_summary <- cleaned_data|>
   )|>
   summarize(totalactivity = sum (activity))
 
-
 # Plot total activities against age
 ggplot(activity_summary, aes(x = age, y = totalactivity, color = sex)) +
   geom_point() +
@@ -157,23 +188,28 @@ ggplot(activity_summary, aes(x = age, y = totalactivity, color = sex)) +
   theme_minimal()
 ```
 
+*Answer*
+
+Regardless of the educational category, Total Activity decreases as the age increase. 
+
 ```{r}
-min <- cleaned_data|>
-  group_by(SEQN,education,sex,age)|>
+twentyfour_hour_activity <- cleaned_data|>
+  group_by(SEQN,education, sex)|>
   pivot_longer(
   min1:min1440,
   names_to = "time",
-  values_to = "min"
-  )|>
-  summarize(min = mean (min))
-
+  values_to = "activity"
+  )
 
 # Plot 24-hour activity time courses
-ggplot(min, aes(x = min, y = age, color = sex)) +
-  geom_smooth() +
+ggplot(twentyfour_hour_activity, aes(x = time, y = activity, color = sex)) +
+  geom_smooth(method = "lm") +
+  geom_point()+
   facet_wrap(~education) +
-  labs(x = "Minute of the Day", y = "MIMS", color = "sex") +
+  labs(title = "24-hour activity", x = "time", y = "activity", color = "sex") +
   theme_minimal()
 
 ```
+*Answer*
 
+Regardless of the educational category, 24 hour activity is almost the same. 
